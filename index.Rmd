@@ -1,3 +1,5 @@
+library(rmarkdown)
+library(knitr)
 ---
 title: "I have the best titles"
 author: Your name here
