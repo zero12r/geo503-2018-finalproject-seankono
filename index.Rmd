@@ -2,7 +2,7 @@ library(rmarkdown)
 library(knitr)
 ---
 title: "I have the best titles"
-author: Your name here
+author: Sean Konovitz
 subtitle: Subtitle here if desired
 ---
 
