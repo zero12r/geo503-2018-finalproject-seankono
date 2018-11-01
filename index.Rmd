@@ -1,7 +1,7 @@
 library(rmarkdown)
 library(knitr)
 ---
-title: Project 
+title: Data Science Project 
 author: Sean Konovitz
 subtitle: Subtitle if wanted
 ---
