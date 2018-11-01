@@ -3,7 +3,7 @@ library(knitr)
 ---
 title: Project 
 author: Sean Konovitz
-subtitle: Subtitle here if desired
+subtitle: Subtitle if wanted
 ---
 
 # Introduction
