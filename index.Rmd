@@ -7,9 +7,9 @@ subtitle: Subtitle if wanted
 ---
 
 # Introduction
-My really awesome and complete introduction will go here.  
+My really awesome and complete introduction will go here under this 
 
-> I know words.  I have the best words.  ~ Donald Trump
+
 
 # Materials and methods
 
