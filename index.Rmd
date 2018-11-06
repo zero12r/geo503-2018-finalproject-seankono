@@ -3,7 +3,7 @@ library(knitr)
 ---
 title: Data Science Project 
 author: Sean Konovitz
-subtitle: Subtitle if wanted
+subtitle: Subtitle 
 ---
 
 # Introduction
