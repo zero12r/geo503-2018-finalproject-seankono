@@ -8,12 +8,19 @@ df <- read.socrata(
   email     = "seankono@buffalo.edu",
   password  = "Skbuff66$")
 View(df)
+df$parent_incident_type="Breaking & Entering"
 
 install.packages("tidycensus")
 library(tidycensus)
 library(tidyverse)
 census_api_key("a228276714dbd52068673939d5ccb03af28a4cab", overwrite = FALSE, install = TRUE)
 Sys.getenv("a228276714dbd52068673939d5ccb03af28a4cab")
+
+erie<- get_acs(state = "NY", county = "Erie", geography = "tract", 
+                  variables = "B19013_001", geometry = TRUE)
+head(erie)
+View(erie)
+
 
 library(maptools)
 bufftracts<- readShapePoly("C:/Users/Asus/Documents/Project/bufftractsproj.shp") 

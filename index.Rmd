@@ -2,7 +2,7 @@ library(rmarkdown)
 library(knitr)
 ---
 title: Data Science Project 
-author: Sean Konovitz
+author: Sean Konovitz-Davern
 subtitle: Subtitle 
 ---
 
@@ -41,7 +41,7 @@ Load any required packages in a code chunk (you may need to install some package
 library(dplyr)
 library(ggplot2)
 library(maps)
-library(spocc)
+
 knitr::opts_chunk$set(cache=TRUE)  # cache the results for quick compiling
 ```
 
@@ -56,7 +56,6 @@ We are going to use the `occ()` function to download _occurrence_ records for th
 sp='Turdus migratorius'
 
 ## run the query and convert to data.frame()
-d = occ(query=sp, from='ebird',limit = 100) %>% occ2df()
 ```
 This can take a few seconds.
 
@@ -64,10 +63,7 @@ This can take a few seconds.
 # Load coastline
 map=map_data("world")
 
-ggplot(d,aes(x=longitude,y=latitude))+
-  geom_polygon(aes(x=long,y=lat,group=group),data=map)+
-  geom_point(col="red")+
-  coord_equal()
+
 ```
 
 
@@ -76,7 +72,6 @@ ggplot(d,aes(x=longitude,y=latitude))+
 Show tables, plots, etc. and describe them.
 
 ```{r}
-hist(d$latitude)
 ```
 
 # Conclusions
