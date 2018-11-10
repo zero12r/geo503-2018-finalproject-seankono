@@ -306,56 +306,63 @@ div.tocify {
 </div>
 
 
-<p>library(rmarkdown) library(knitr) — title: Data Science Project author: Sean Konovitz-Davern subtitle: Subtitle —</p>
+<p>library(rmarkdown) library(knitr) — #Data Science Project #Sean Konovitz #Crime and Census Attributes in Buffalo, New York<br />
+—</p>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>My really awesome and complete introduction will go here under this</p>
+<p>I will be combining crime data using an API from Open Data Buffalo and census data using the census API. The crime data is a daily updated dataset of crime incidents within the city of Buffalo provided by the Buffalo Police Department. This dataset includes the type of incident, such as theft and assault, as well as the time, date, and coordinates. The census data is using American Community Survey (ACS)five-year estimates at the census tract geography level.</p>
 </div>
 <div id="materials-and-methods" class="section level1">
 <h1>Materials and methods</h1>
-<p>Narrative and most code will go here. Describe what you are doing and show how to do it (with code).</p>
-<p>You can do bullets like this:</p>
-<ul>
-<li>The first most important thing</li>
-<li>The second most important thing</li>
-<li>The third most important thing</li>
-</ul>
-<p>You can do numbers like this:</p>
 <ol style="list-style-type: decimal">
-<li>The first most important thing</li>
-<li>The second most important thing</li>
-<li>The third most important thing</li>
+<li>For the crime data, the package RSocrata was used to read the data from Open Data Buffalo into R, as Open Data Buffalo is a website “powered by” Socrata. Socrata is a software company that forms partnerships with governments, such as Buffalo’s in 2017 to provide accessible data. In order to open it with the RSocrata package in R, one has to create an account with the site and aquire an app token. This token, along with the username, password and api link are utilized with the function read.socrata() to get it available in R. In this case, it is the crime incidents dataset. As far as geography, spatial data with the 79 census tracts in Buffalo was obtained as well from Open Data Buffalo. To read this into R, the function readShapePoly() from the maptools package was used with the file path to the shapefile.</li>
 </ol>
-<p>See <a href="http://rmarkdown.rstudio.com/" class="uri">http://rmarkdown.rstudio.com/</a> for all the amazing things you can do.</p>
-<p>Here’s my first code chunk.</p>
-<pre class="r"><code>1+2</code></pre>
-<pre><code>## [1] 3</code></pre>
-<p>Load any required packages in a code chunk (you may need to install some packages):</p>
-<pre class="r"><code>library(dplyr)
-library(ggplot2)
-library(maps)
+<p>Note: I will have to put data in data folder before it would be able to run</p>
+<pre class="library(&quot;rsocrata&quot;)"><code>
+crime &lt;- read.socrata(
+  &quot;https://data.buffalony.gov/resource/d6g9-xbgu.json&quot;,
+  app_token = &quot;y67OCQdGIHD80tqceGSZV8rj1&quot;,
+  email     = &quot;seankono@buffalo.edu&quot;,
+  password  = &quot;Skbuff66$&quot;)</code></pre>
+<pre><code>library(maptools)
+buffalotracts&lt;- readShapePoly(&quot;C:/Users/Asus/Documents/R/R(Git)/geo503-2018-seankono/geo_export_c9004500-af2b-4c4d-8cde-4de9d5831f2e.shp&quot;)
+</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>For the census data, the packages tidycensus and tidyverse allowed for the data to be incorporated easily into R. First, one needs to obtain a census API key from <a href="https://api.census.gov/data/key_signup.html" class="uri">https://api.census.gov/data/key_signup.html</a>. Then, the key is put in the census_api_key() and Sys.getenv() functions.</li>
+</ol>
+<p>To get the data itself, the decision has to be made between the decennial, which is performed every ten years, or the Amercan Community Survey (ACS), which are five year estimates with a margin of error. I decided to go with the ACS, as it seemed to provide more variables that may be useful to the project.</p>
+<p>To get the acs data, get_acs() is used and the state, county, geography, variables, and geometry. Since the study area is Buffalo, “NY” and “Erie” were used while “tract” was chosen as the geography since I felt it fits best with the census data. I could have went smaller, to census block groups, but with smaller populations the data may be less reliable. I chose median household income as the variable using the code “B19013_001”, since median income is a common measure used. I still change it to a different variable or incorporate an additional one.</p>
+<pre><code>library(tidycensus)
+library(tidyverse)
 
-knitr::opts_chunk$set(cache=TRUE)  # cache the results for quick compiling</code></pre>
-<p>We are going to use the <code>occ()</code> function to download <em>occurrence</em> records for the American robin (<em>Turdus migratorius</em>) from the <a href="gbif.org">Global Biodiversity Information Facility</a>.</p>
-<p><img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/Turdus-migratorius-002.jpg" alt="alt text" width="200"> <small><small><small>Licensed under CC BY-SA 3.0 via <a href="https://commons.wikimedia.org/wiki/File:Turdus-migratorius-002.jpg#/media/File:Turdus-migratorius-002.jpg">Wikimedia Commons</a></small></small></small></p>
-<pre class="r"><code>## define which species to query
-sp=&#39;Turdus migratorius&#39;
+census_api_key(&quot;a228276714dbd52068673939d5ccb03af28a4cab&quot;, overwrite = FALSE, install = TRUE)
+Sys.getenv(&quot;a228276714dbd52068673939d5ccb03af28a4cab&quot;)
 
-## run the query and convert to data.frame()</code></pre>
-<p>This can take a few seconds.</p>
-<pre class="r"><code># Load coastline
-map=map_data(&quot;world&quot;)</code></pre>
+erie&lt;- get_acs(state = &quot;NY&quot;, county = &quot;Erie&quot;, geography = &quot;tract&quot;, 
+                  variables = &quot;B19013_001&quot;, geometry = TRUE)</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>To get just the census tracts for Buffalo and not all of Erie County, I merged the Buffalo tracts and the census data by “geoid10” and “GEOID”, which have the same values corresponding to census tract. By setting all.y=FALSE, that made it so only the 79 Buffalo tracts and their data remains.</li>
+</ol>
+<pre><code>
+joined.tracts &lt;- merge(bufftract, erie, by.x = &quot;geoid10&quot;, by.y = &quot;GEOID&quot;,
+                       all.y = FALSE)</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>Next is to enable the crime data to be turned into points and then likely count the points in each polygon tract which will probably use the point.in.polygon function. This will be done Monday or by Tuesday.</li>
+</ol>
 </div>
 <div id="results" class="section level1">
 <h1>Results</h1>
-<p>Show tables, plots, etc. and describe them.</p>
+<p>Still to be determined. Should be able to be updated Monday or Tuesday</p>
 </div>
 <div id="conclusions" class="section level1">
 <h1>Conclusions</h1>
-<p>What have you learned? Are there any broader implications?</p>
+<p>To be determined from the results</p>
 </div>
 <div id="references" class="section level1">
 <h1>References</h1>
+<p><a href="https://data.buffalony.gov/resource/d6g9-xbgu.json" class="uri">https://data.buffalony.gov/resource/d6g9-xbgu.json</a></p>
+<p><a href="https://data.buffalony.gov/d/ts8p-7v76?category=Government&amp;view_name=U-S-Census-Tracts-in-BuffaloOpens" class="uri">https://data.buffalony.gov/d/ts8p-7v76?category=Government&amp;view_name=U-S-Census-Tracts-in-BuffaloOpens</a> in new window.</p>
+<p><a href="https://walkerke.github.io/tidycensus/articles/spatial-data.html" class="uri">https://walkerke.github.io/tidycensus/articles/spatial-data.html</a></p>
 </div>
 
 <!-- give the footer some space -->
