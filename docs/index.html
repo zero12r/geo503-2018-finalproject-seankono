@@ -315,17 +315,11 @@ div.tocify {
 <div id="materials-and-methods" class="section level1">
 <h1>Materials and methods</h1>
 <ol style="list-style-type: decimal">
-<li>For the crime data, the package RSocrata was used to read the data from Open Data Buffalo into R, as Open Data Buffalo is a website “powered by” Socrata. Socrata is a software company that forms partnerships with governments, such as Buffalo’s in 2017 to provide accessible data. In order to open it with the RSocrata package in R, one has to create an account with the site and aquire an app token. This token, along with the username, password and api link are utilized with the function read.socrata() to get it available in R. In this case, it is the crime incidents dataset. As far as geography, spatial data with the 79 census tracts in Buffalo was obtained as well from Open Data Buffalo. To read this into R, the function readShapePoly() from the maptools package was used with the file path to the shapefile.</li>
+<li>For the crime data, the package RSocrata was used to read the data from Open Data Buffalo into R, as Open Data Buffalo is a website “powered by” Socrata. Socrata is a software company that forms partnerships with governments, such as Buffalo’s in 2017 to provide accessible data. In order to open it with the RSocrata package in R, one has to create an account with the site and aquire an app token. This token, along with the username, password and api link are utilized with the function read.socrata() to get it available in R. In this case, it is the crime incidents dataset. As far as geography, spatial data with the 79 census tracts in Buffalo was obtained as well from Open Data Buffalo. To read this into R, the function read_sf() was used to read the Buffalo tracts data.</li>
 </ol>
-<p>Note: I will have to put data in data folder before it would be able to run</p>
-<pre class="library(&quot;rsocrata&quot;)"><code>
-crime &lt;- read.socrata(
-  &quot;https://data.buffalony.gov/resource/d6g9-xbgu.json&quot;,
-  app_token = &quot;y67OCQdGIHD80tqceGSZV8rj1&quot;,
-  email     = &quot;seankono@buffalo.edu&quot;,
-  password  = &quot;Skbuff66$&quot;)</code></pre>
-<pre><code>library(maptools)
-buffalotracts&lt;- readShapePoly(&quot;C:/Users/Asus/Documents/R/R(Git)/geo503-2018-seankono/geo_export_c9004500-af2b-4c4d-8cde-4de9d5831f2e.shp&quot;)
+<pre><code>load(&quot;data/buffcrime.Rda&quot;)
+</code></pre>
+<pre><code>buffalotracts&lt;- read_sf(&quot;data/geo_export_c9004500-af2b-4c4d-8cde-4de9d5831f2e.shp&quot;)
 </code></pre>
 <ol start="2" style="list-style-type: decimal">
 <li>For the census data, the packages tidycensus and tidyverse allowed for the data to be incorporated easily into R. First, one needs to obtain a census API key from <a href="https://api.census.gov/data/key_signup.html" class="uri">https://api.census.gov/data/key_signup.html</a>. Then, the key is put in the census_api_key() and Sys.getenv() functions.</li>
@@ -335,24 +329,30 @@ buffalotracts&lt;- readShapePoly(&quot;C:/Users/Asus/Documents/R/R(Git)/geo503-2
 <pre><code>library(tidycensus)
 library(tidyverse)
 
-census_api_key(&quot;a228276714dbd52068673939d5ccb03af28a4cab&quot;, overwrite = FALSE, install = TRUE)
-Sys.getenv(&quot;a228276714dbd52068673939d5ccb03af28a4cab&quot;)
-
 erie&lt;- get_acs(state = &quot;NY&quot;, county = &quot;Erie&quot;, geography = &quot;tract&quot;, 
-                  variables = &quot;B19013_001&quot;, geometry = TRUE)</code></pre>
+                  variables = &quot;B19013_001&quot;, geometry = TRUE)
+load(&quot;data/eriecensus.Rda&quot;)
+
+                 </code></pre>
 <ol start="3" style="list-style-type: decimal">
 <li>To get just the census tracts for Buffalo and not all of Erie County, I merged the Buffalo tracts and the census data by “geoid10” and “GEOID”, which have the same values corresponding to census tract. By setting all.y=FALSE, that made it so only the 79 Buffalo tracts and their data remains.</li>
 </ol>
 <pre><code>
 joined.tracts &lt;- merge(bufftract, erie, by.x = &quot;geoid10&quot;, by.y = &quot;GEOID&quot;,
-                       all.y = FALSE)</code></pre>
+                       all.y = FALSE)
+load(&quot;data/joinedtracts.Rda&quot;)
+</code></pre>
 <ol start="4" style="list-style-type: decimal">
-<li>Next is to enable the crime data to be turned into points and then likely count the points in each polygon tract which will probably use the point.in.polygon function. This will be done Monday or by Tuesday.</li>
+<li>Next is to enable the crime data to be used as points. This was done by using the st_as_sf() function with longitude(x) and latitude(y)as the coordinates(coords). The coordinate reference system (crs) was set to 4326.</li>
 </ol>
+<pre><code>crimepoints&lt;- st_as_sf(crime, coords=c(&quot;longitude&quot;, &quot;latitude&quot;),
+                         crs= 4326)
+load(&quot;data/crimepoints.Rda&quot;)
+</code></pre>
 </div>
 <div id="results" class="section level1">
 <h1>Results</h1>
-<p>Still to be determined. Should be able to be updated Monday or Tuesday</p>
+<p>Still to be determined.</p>
 </div>
 <div id="conclusions" class="section level1">
 <h1>Conclusions</h1>

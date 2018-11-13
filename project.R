@@ -4,7 +4,7 @@ library(tidyverse)
 erie<- get_acs(state = "NY", county = "Erie", geography = "tract", 
                   variables = "B19013_001", geometry = TRUE)
 load("data/eriecensus.Rda")
-
+load("data/buffcrime.Rda")
 
 
 library(sf)
@@ -21,8 +21,11 @@ load("data/crimepoints.Rda")
 library(dplyr)
 joined.tracts <- merge(bufftract, erie, by.x = "geoid10", by.y = "GEOID",
                        +all.y = FALSE)
+load("data/joinedtracts.Rda")
 View(crimepoints)
 
 plot(crimepoints)
+plot(joined.tracts)
+plot(buffalotracts)
 
 
