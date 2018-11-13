@@ -12,22 +12,14 @@ I will be combining crime data using an API from Open Data Buffalo and census da
 
 
 # Materials and methods
-1. For the crime data, the package RSocrata was used to read the data from Open Data Buffalo into R, as Open Data Buffalo is a website "powered by" Socrata. Socrata is a software company that forms partnerships with governments, such as Buffalo's in 2017 to provide accessible data. In order to open it with the RSocrata package in R, one has to create an account with the site and aquire an app token. This token, along with the username, password and api link are utilized with the function read.socrata() to get it available in R. In this case, it is the crime incidents dataset. As far as geography, spatial data with the 79 census tracts in Buffalo was obtained as well from Open Data Buffalo. To read this into R, the function readShapePoly() from the maptools package was used with the file path to the shapefile.
+1. For the crime data, the package RSocrata was used to read the data from Open Data Buffalo into R, as Open Data Buffalo is a website "powered by" Socrata. Socrata is a software company that forms partnerships with governments, such as Buffalo's in 2017 to provide accessible data. In order to open it with the RSocrata package in R, one has to create an account with the site and aquire an app token. This token, along with the username, password and api link are utilized with the function read.socrata() to get it available in R. In this case, it is the crime incidents dataset. As far as geography, spatial data with the 79 census tracts in Buffalo was obtained as well from Open Data Buffalo. To read this into R, the function read_sf() was used to read the Buffalo tracts data. 
 
-Note: I will have to put data in data folder before it would be able to run 
+```
+load("data/buffcrime.Rda")
 
-
-```library("RSocrata")
-
-crime <- read.socrata(
-  "https://data.buffalony.gov/resource/d6g9-xbgu.json",
-  app_token = "y67OCQdGIHD80tqceGSZV8rj1",
-  email     = "seankono@buffalo.edu",
-  password  = "Skbuff66$")
 ```
 ```
-library(maptools)
-buffalotracts<- readShapePoly("C:/Users/Asus/Documents/R/R(Git)/geo503-2018-seankono/geo_export_c9004500-af2b-4c4d-8cde-4de9d5831f2e.shp")
+buffalotracts<- read_sf("data/geo_export_c9004500-af2b-4c4d-8cde-4de9d5831f2e.shp")
 
 ```
 2. For the census data, the packages tidycensus and tidyverse allowed for the data to be incorporated easily into R. First, one needs to obtain a census API key from https://api.census.gov/data/key_signup.html. Then, the key is put in the census_api_key() and Sys.getenv() functions. 
@@ -40,11 +32,11 @@ To get the acs data, get_acs() is used and the state, county, geography, variabl
 library(tidycensus)
 library(tidyverse)
 
-census_api_key("a228276714dbd52068673939d5ccb03af28a4cab", overwrite = FALSE, install = TRUE)
-Sys.getenv("a228276714dbd52068673939d5ccb03af28a4cab")
-
 erie<- get_acs(state = "NY", county = "Erie", geography = "tract", 
                   variables = "B19013_001", geometry = TRUE)
+load("data/eriecensus.Rda")
+
+                 
 ```
 3. To get just the census tracts for Buffalo and not all of Erie County, I merged the Buffalo tracts and the census data by "geoid10" and "GEOID", which have the same values corresponding to census tract. By setting all.y=FALSE, that made it so only the 79 Buffalo tracts and their data remains. 
 
@@ -52,13 +44,21 @@ erie<- get_acs(state = "NY", county = "Erie", geography = "tract",
 
 joined.tracts <- merge(bufftract, erie, by.x = "geoid10", by.y = "GEOID",
                        all.y = FALSE)
-```
-4. Next is to enable the crime data to be turned into points and then likely count the points in each polygon tract which will probably use the point.in.polygon function. This will be done Monday or by Tuesday. 
+load("data/joinedtracts.Rda")
 
+```
+4. Next is to enable the crime data to be used as points. This was done by using the st_as_sf() function with longitude(x) and latitude(y)as the coordinates(coords). The coordinate reference system (crs) was set to 4326.
+
+```
+crimepoints<- st_as_sf(crime, coords=c("longitude", "latitude"),
+                         crs= 4326)
+load("data/crimepoints.Rda")
+
+```
 
 # Results
 
-Still to be determined. Should be able to be updated Monday or Tuesday
+Still to be determined. 
 
 # Conclusions
 
