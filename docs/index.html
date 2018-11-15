@@ -315,12 +315,12 @@ div.tocify {
 <div id="materials-and-methods" class="section level1">
 <h1>Materials and methods</h1>
 <ol style="list-style-type: decimal">
-<li>For the crime data, the package RSocrata was used to read the data from Open Data Buffalo into R, as Open Data Buffalo is a website “powered by” Socrata. Socrata is a software company that forms partnerships with governments, such as Buffalo’s in 2017 to provide accessible data. In order to open it with the RSocrata package in R, one has to create an account with the site and aquire an app token. This token, along with the username, password and api link are utilized with the function read.socrata() to get it available in R. In this case, it is the crime incidents dataset. As far as geography, spatial data with the 79 census tracts in Buffalo was obtained as well from Open Data Buffalo. To read this into R, the function read_sf() was used to read the Buffalo tracts data.</li>
+<li>For the crime data, the package RSocrata was used to read the data from Open Data Buffalo into R, as Open Data Buffalo is a website “powered by” Socrata. Socrata is a software company that forms partnerships with governments, such as Buffalo’s in 2017 to provide accessible data. In order to open it with the RSocrata package in R, one has to create an account with the site and aquire an app token. This token, along with the username, password and api link are utilized with the function read.socrata() to get it available in R. In this case, it is the crime incidents dataset. As far as geography, spatial data with the 79 census tracts in Buffalo was obtained as well from Open Data Buffalo. To read this into R, the function readOGR() from the rgdal package was used to read the Buffalo tracts shapefile data into R as a SpatialPolgyfgonDataFrame. stringsAsFactors was set to FALSE so character vectors were not converted to factors.</li>
 </ol>
 <pre><code>load(&quot;data/buffcrime.Rda&quot;)
 </code></pre>
-<pre><code>buffalotracts&lt;- read_sf(&quot;data/geo_export_c9004500-af2b-4c4d-8cde-4de9d5831f2e.shp&quot;)
-</code></pre>
+<pre><code>library(rgdal)
+openDataTracts &lt;- readOGR(&quot;data/geo_export_c9004500-af2b-4c4d-8cde-4de9d5831f2e.shp&quot;, stringsAsFactors = FALSE)</code></pre>
 <ol start="2" style="list-style-type: decimal">
 <li>For the census data, the packages tidycensus and tidyverse allowed for the data to be incorporated easily into R. First, one needs to obtain a census API key from <a href="https://api.census.gov/data/key_signup.html" class="uri">https://api.census.gov/data/key_signup.html</a>. Then, the key is put in the census_api_key() and Sys.getenv() functions.</li>
 </ol>
@@ -335,19 +335,41 @@ load(&quot;data/eriecensus.Rda&quot;)
 
                  </code></pre>
 <ol start="3" style="list-style-type: decimal">
-<li>To get just the census tracts for Buffalo and not all of Erie County, I merged the Buffalo tracts and the census data by “geoid10” and “GEOID”, which have the same values corresponding to census tract. By setting all.y=FALSE, that made it so only the 79 Buffalo tracts and their data remains.</li>
+<li>To get just the census tracts for Buffalo and not all of Erie County, I merged the Buffalo tracts and the census data by “geoid10_1” and “GEOID” respectively, which have the same values corresponding to census tract. By setting all.y=FALSE, that made it so only the 79 Buffalo tracts and their data remains.sort=FALSE was added so the data would not sort after it forms.</li>
 </ol>
-<pre><code>
-joined.tracts &lt;- merge(bufftract, erie, by.x = &quot;geoid10&quot;, by.y = &quot;GEOID&quot;,
-                       all.y = FALSE)
-load(&quot;data/joinedtracts.Rda&quot;)
+<pre><code>openDataTracts@data &lt;- merge(openDataTracts@data, erie, by.x = &quot;geoid10_1&quot;, by.y = &quot;GEOID&quot;, all.y = FALSE, sort = FALSE)
 </code></pre>
 <ol start="4" style="list-style-type: decimal">
-<li>Next is to enable the crime data to be used as points. This was done by using the st_as_sf() function with longitude(x) and latitude(y)as the coordinates(coords). The coordinate reference system (crs) was set to 4326.</li>
+<li>Next is to enable the crime data to be used as points by turning it to a SpatialPointsDataFrame. This was done by using the SpatialPointsDataFrame function from sp with longitude(x) and latitude(y)as the coordinates(coords). As.numeric had to be included in this case, so they read as numbers. The coordinate reference system (crs) was set to the proj4string “+init=epsg:4326”.</li>
 </ol>
-<pre><code>crimepoints&lt;- st_as_sf(crime, coords=c(&quot;longitude&quot;, &quot;latitude&quot;),
-                         crs= 4326)
-load(&quot;data/crimepoints.Rda&quot;)
+<pre><code>library(sp)
+crime.spdf &lt;- SpatialPointsDataFrame(coords = cbind(as.numeric(crime$longitude),
+                      as.numeric(crime$latitude)), data = crime,
+                      proj4string = CRS(&quot;+init=epsg:4326&quot;))
+</code></pre>
+<ol start="5" style="list-style-type: decimal">
+<li>The next part was to count the amount of points (crime incidents) in each polygon(census tracts) using poly.counts() from the GISTools package.</li>
+</ol>
+<pre><code>library(GISTools)
+crimesInTracts &lt;- poly.counts(crime.spdf, openDataTracts)
+</code></pre>
+<ol start="6" style="list-style-type: decimal">
+<li>When visualizing it, a certain tract had a disproportionally large rate compared to the others,likely since it is where the Buffalo police are headquartered, so that tract was set to 0. A rate was then created by dividing the counted points in each tract by the total population in each tract, which was given with the shapefile.</li>
+</ol>
+<pre><code>openDataTracts$crimeCounts &lt;- crimesInTracts
+openDataTracts$crimeCounts[which.max(openDataTracts$crimeCounts)] &lt;- 0
+
+openDataTracts$crimeDensity &lt;- openDataTracts$crimeCounts / openDataTracts$total_pop
+</code></pre>
+<ol start="7" style="list-style-type: decimal">
+<li>A simple chloropleth map was then created using spplot based on the calculated densities. I still have to incorporate the census data such as median income and improve the map layout.</li>
+</ol>
+<div class="figure">
+<img src="img/CrimeDensity.png" alt="Crime Density in Buffalo" />
+<p class="caption">Crime Density in Buffalo</p>
+</div>
+<pre><code>library(sp)
+spplot(openDataTracts, &quot;crimeDensity&quot;)
 </code></pre>
 </div>
 <div id="results" class="section level1">

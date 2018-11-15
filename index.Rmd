@@ -12,15 +12,15 @@ I will be combining crime data using an API from Open Data Buffalo and census da
 
 
 # Materials and methods
-1. For the crime data, the package RSocrata was used to read the data from Open Data Buffalo into R, as Open Data Buffalo is a website "powered by" Socrata. Socrata is a software company that forms partnerships with governments, such as Buffalo's in 2017 to provide accessible data. In order to open it with the RSocrata package in R, one has to create an account with the site and aquire an app token. This token, along with the username, password and api link are utilized with the function read.socrata() to get it available in R. In this case, it is the crime incidents dataset. As far as geography, spatial data with the 79 census tracts in Buffalo was obtained as well from Open Data Buffalo. To read this into R, the function read_sf() was used to read the Buffalo tracts data. 
+1. For the crime data, the package RSocrata was used to read the data from Open Data Buffalo into R, as Open Data Buffalo is a website "powered by" Socrata. Socrata is a software company that forms partnerships with governments, such as Buffalo's in 2017 to provide accessible data. In order to open it with the RSocrata package in R, one has to create an account with the site and aquire an app token. This token, along with the username, password and api link are utilized with the function read.socrata() to get it available in R. In this case, it is the crime incidents dataset. As far as geography, spatial data with the 79 census tracts in Buffalo was obtained as well from Open Data Buffalo. To read this into R, the function readOGR() from the rgdal package was used to read the Buffalo tracts shapefile data into R as a SpatialPolgyfgonDataFrame. stringsAsFactors was set to FALSE so character vectors were not converted to factors.
 
 ```
 load("data/buffcrime.Rda")
 
 ```
 ```
-buffalotracts<- read_sf("data/geo_export_c9004500-af2b-4c4d-8cde-4de9d5831f2e.shp")
-
+library(rgdal)
+openDataTracts <- readOGR("data/geo_export_c9004500-af2b-4c4d-8cde-4de9d5831f2e.shp", stringsAsFactors = FALSE)
 ```
 2. For the census data, the packages tidycensus and tidyverse allowed for the data to be incorporated easily into R. First, one needs to obtain a census API key from https://api.census.gov/data/key_signup.html. Then, the key is put in the census_api_key() and Sys.getenv() functions. 
 
@@ -38,24 +38,45 @@ load("data/eriecensus.Rda")
 
                  
 ```
-3. To get just the census tracts for Buffalo and not all of Erie County, I merged the Buffalo tracts and the census data by "geoid10" and "GEOID", which have the same values corresponding to census tract. By setting all.y=FALSE, that made it so only the 79 Buffalo tracts and their data remains. 
+3. To get just the census tracts for Buffalo and not all of Erie County, I merged the Buffalo tracts and the census data by "geoid10_1" and "GEOID" respectively, which have the same values corresponding to census tract. By setting all.y=FALSE, that made it so only the 79 Buffalo tracts and their data remains.sort=FALSE was added so the data would not sort after it forms.
 
 ```
-
-joined.tracts <- merge(bufftract, erie, by.x = "geoid10", by.y = "GEOID",
-                       all.y = FALSE)
-load("data/joinedtracts.Rda")
+openDataTracts@data <- merge(openDataTracts@data, erie, by.x = "geoid10_1", by.y = "GEOID", all.y = FALSE, sort = FALSE)
 
 ```
-4. Next is to enable the crime data to be used as points. This was done by using the st_as_sf() function with longitude(x) and latitude(y)as the coordinates(coords). The coordinate reference system (crs) was set to 4326.
+4. Next is to enable the crime data to be used as points by turning it to a SpatialPointsDataFrame. This was done by using the SpatialPointsDataFrame function from sp with longitude(x) and latitude(y)as the coordinates(coords). As.numeric had to be included in this case, so they read as numbers. The coordinate reference system (crs) was set to the proj4string "+init=epsg:4326".
 
 ```
-crimepoints<- st_as_sf(crime, coords=c("longitude", "latitude"),
-                         crs= 4326)
-load("data/crimepoints.Rda")
+library(sp)
+crime.spdf <- SpatialPointsDataFrame(coords = cbind(as.numeric(crime$longitude),
+                      as.numeric(crime$latitude)), data = crime,
+                      proj4string = CRS("+init=epsg:4326"))
 
 ```
+5. The next part was to count the amount of points (crime incidents) in each polygon(census tracts) using poly.counts() from the GISTools package. 
 
+```
+library(GISTools)
+crimesInTracts <- poly.counts(crime.spdf, openDataTracts)
+
+```
+6. When visualizing it, a certain tract had a disproportionally large rate compared to the others,likely since it is where the Buffalo police are headquartered, so that tract was set to 0. A rate was then created by dividing the counted points in each tract by the total population in each tract, which was given with the shapefile.
+
+```
+openDataTracts$crimeCounts <- crimesInTracts
+openDataTracts$crimeCounts[which.max(openDataTracts$crimeCounts)] <- 0
+
+openDataTracts$crimeDensity <- openDataTracts$crimeCounts / openDataTracts$total_pop
+
+```
+7. A simple chloropleth map was then created using spplot based on the calculated densities. I still have to incorporate the census data such as median income and improve the map layout.
+
+![Crime Density in Buffalo](img/CrimeDensity.png)
+```
+library(sp)
+spplot(openDataTracts, "crimeDensity")
+
+```
 # Results
 
 Still to be determined. 
