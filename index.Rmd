@@ -1,12 +1,12 @@
 library(rmarkdown)
 library(knitr)
 ---
-#Data Science Project 
+#Data Science Project  
 #Sean Konovitz
 #Crime and Census Attributes in Buffalo, New York  
 ---
 
-# Introduction
+# Introduction 
 I will be combining crime data using an API from Open Data Buffalo and census data using the census API. The crime data is a daily updated dataset of crime incidents within the city of Buffalo provided by the Buffalo Police Department. This dataset includes the type of incident, such as theft and assault, as well as the time, date, and coordinates. The census data is using American Community Survey (ACS)five-year estimates at the census tract geography level.
 
 
